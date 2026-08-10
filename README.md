@@ -16,7 +16,7 @@ For each selected assistant, the extension reuses the first matching tab in the 
 ## Shortcuts
 
 - `Shift+Command+O` / `Ctrl+Shift+O`: start a new chat on the current supported site
-- `Command+K` / `Ctrl+K`: search chats on ChatGPT, Claude, Gemini, and Grok
+- `Command+K` / `Ctrl+K`: search chats on all six supported AI assistants
 
 ## Supported AI Assistants
 
@@ -42,8 +42,7 @@ For each selected assistant, the extension reuses the first matching tab in the 
 - AI websites can change their page structure at any time, which may require selector updates in this extension.
 - Prompts are sent only to the assistants you select and are not stored by the extension.
 - New chat uses `Shift+Command+O` on macOS and `Ctrl+Shift+O` on Windows/Linux.
-- Search chats uses `Command+K` / `Ctrl+K` on ChatGPT, Claude, Gemini, and Grok.
-- DeepSeek and Doubao do not support chat search yet.
+- Search chats uses `Command+K` / `Ctrl+K` on all six supported AI assistants.
 - The new-chat shortcut can be changed in `chrome://extensions/shortcuts`.
 
 ## Permissions

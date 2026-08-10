@@ -16,7 +16,7 @@
 ## 快捷键
 
 - `Shift+Command+O` / `Ctrl+Shift+O`：在当前支持的网站中新建对话
-- `Command+K` / `Ctrl+K`：在 ChatGPT、Claude、Gemini 和 Grok 中搜索对话
+- `Command+K` / `Ctrl+K`：在六个支持的 AI 助手中搜索对话
 
 ## 支持的 AI 助手
 
@@ -42,8 +42,7 @@
 - AI 网站可能随时修改页面结构，届时可能需要更新扩展中的选择器。
 - 扩展只会将内容发送到手动选中的 AI 助手，不会保存输入内容。
 - 新建对话使用 `Shift+Command+O`（macOS）或 `Ctrl+Shift+O`（Windows/Linux）。
-- 搜索对话在 ChatGPT、Claude、Gemini 和 Grok 中统一使用 `Command+K` / `Ctrl+K`。
-- DeepSeek 和 Doubao 暂不支持搜索对话。
+- 六个支持的 AI 助手都统一使用 `Command+K` / `Ctrl+K` 搜索对话。
 - “新建对话”快捷键可以在 `chrome://extensions/shortcuts` 中修改。
 
 ## 权限说明

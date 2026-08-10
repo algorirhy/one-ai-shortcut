@@ -13,6 +13,8 @@ A lightweight Chrome extension for sending one text prompt to new chats across m
 
 For each selected assistant, the extension reuses the first matching tab in the current window. If none is open, it creates a background tab. It then opens a new chat, fills in the prompt, and sends it. Failures on one site do not stop the other sites.
 
+The popup closes automatically after delivery finishes. If any selected assistant fails, Chrome shows a system notification listing the failed assistants.
+
 ## Shortcuts
 
 - `Shift+Command+O` / `Ctrl+Shift+O`: start a new chat on the current supported site
@@ -47,4 +49,5 @@ For each selected assistant, the extension reuses the first matching tab in the 
 
 ## Permissions
 
-The `tabs` permission is used only to find an existing supported AI tab, reuse the first matching tab, or create a new one when needed.
+- `tabs`: finds an existing supported AI tab, reuses the first matching tab, or creates a new one when needed.
+- `notifications`: reports which assistants failed after a broadcast. No notification is shown when every delivery succeeds.

@@ -276,34 +276,8 @@
     editor.dispatchEvent(new KeyboardEvent('keyup', eventInit));
   }
 
-  function clickWithPointerSequence(button) {
-    const rect = button.getBoundingClientRect();
-    const eventInit = {
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-      view: window,
-      button: 0,
-      buttons: 1,
-      detail: 1,
-      clientX: rect.left + rect.width / 2,
-      clientY: rect.top + rect.height / 2,
-    };
-
-    button.focus();
-    for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
-      const EventConstructor = type.startsWith('pointer') && typeof PointerEvent === 'function'
-        ? PointerEvent
-        : MouseEvent;
-      const isDown = type === 'pointerdown' || type === 'mousedown';
-      button.dispatchEvent(new EventConstructor(type, {
-        ...eventInit,
-        buttons: isDown ? 1 : 0,
-        pointerId: 1,
-        pointerType: 'mouse',
-        isPrimary: true,
-      }));
-    }
+  function requestDoubaoMainWorldSubmit() {
+    window.dispatchEvent(new Event('one-ai-shortcut:doubao-submit'));
   }
 
   async function waitForPromptToClear(editor, prompt, timeoutMs = 2500) {
@@ -319,14 +293,8 @@
     const sendButton = await waitForSendButton(site);
     if (sendButton) {
       if (site.id === 'doubao') {
-        // Doubao ignores HTMLElement.click(), so dispatch the pointer/mouse
-        // sequence used by its send-button handler.
-        clickWithPointerSequence(sendButton);
-        if (await waitForPromptToClear(editor, prompt)) return 'pointer-sequence';
-
-        submitWithEnter(editor);
-        if (await waitForPromptToClear(editor, prompt)) return 'enter-fallback';
-
+        requestDoubaoMainWorldSubmit();
+        if (await waitForPromptToClear(editor, prompt, 5000)) return 'main-world';
         throw new Error('Doubao kept the prompt in the input after submission.');
       }
 

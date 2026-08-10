@@ -140,6 +140,29 @@ function runWithSiteLock(siteId, task) {
   });
 }
 
+async function notifyFailures(results) {
+  const failures = results.filter((result) => !result.ok);
+  if (!failures.length || !chrome.notifications?.create) return;
+
+  const successCount = results.length - failures.length;
+  const failedNames = failures.map((result) => result.name).join(', ');
+  const message = successCount
+    ? `Sent to ${successCount} of ${results.length}. Failed: ${failedNames}.`
+    : `No prompts were sent. Failed: ${failedNames}.`;
+
+  try {
+    await chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icons/icon.svg',
+      title: 'Some prompts were not sent',
+      message,
+      priority: 1,
+    });
+  } catch (error) {
+    console.error(`${LOG_PREFIX} Failed to show a notification:`, error);
+  }
+}
+
 async function broadcastPrompt(message) {
   const prompt = typeof message.prompt === 'string' ? message.prompt : '';
   if (!prompt.trim()) {
@@ -170,6 +193,8 @@ async function broadcastPrompt(message) {
       }
     })
   )));
+
+  await notifyFailures(results);
 
   return {
     ok: results.every((result) => result.ok),

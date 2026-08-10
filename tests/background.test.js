@@ -25,7 +25,7 @@ function matchesPattern(url, pattern) {
 
 function createHarness(initialTabs, { failSubmitFor = [] } = {}) {
   const tabs = initialTabs.map((tab) => ({ status: 'complete', ...tab }));
-  const records = { created: [], updated: [], submitted: [] };
+  const records = { created: [], updated: [], submitted: [], notifications: [] };
   let runtimeMessageListener;
   let nextTabId = 100;
 
@@ -39,6 +39,12 @@ function createHarness(initialTabs, { failSubmitFor = [] } = {}) {
     },
     commands: {
       onCommand: { addListener() {} },
+    },
+    notifications: {
+      async create(options) {
+        records.notifications.push(options);
+        return 'notification-id';
+      },
     },
     tabs: {
       async query(queryInfo) {
@@ -184,4 +190,7 @@ test('one site failure does not stop delivery to other selected sites', async ()
     Array.from(response.results, (result) => [result.siteId, result.ok]),
     [['chatgpt', true], ['claude', false]],
   );
+  assert.equal(harness.records.notifications.length, 1);
+  assert.equal(harness.records.notifications[0].title, 'Some prompts were not sent');
+  assert.match(harness.records.notifications[0].message, /Failed: Claude/);
 });

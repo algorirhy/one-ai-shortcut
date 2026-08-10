@@ -93,7 +93,7 @@
 
     busy = true;
     sendButton.classList.add('busy');
-    setStatus(`Opening new chats and sending to ${assistantLabel(siteIds.length)}...`, 'warning');
+    setStatus();
     updateControls();
 
     try {
@@ -104,21 +104,17 @@
         preferredWindowId: await preferredWindowId(),
       });
 
+      if (!response || !Array.isArray(response.results)) {
+        throw new Error('The extension did not return a delivery result.');
+      }
+
       if (response?.error && !response.results?.length) {
         throw new Error(response.error);
       }
 
-      const failures = (response?.results || []).filter((result) => !result.ok);
-      if (!failures.length) {
-        setStatus(`Sent to ${assistantLabel(response.successCount)}.`, 'success');
-        promptInput.value = '';
-      } else {
-        const names = failures.map((result) => result.name).join(', ');
-        setStatus(
-          `Sent to ${response.successCount}; failed on ${names}. Open those tabs to check login or page changes.`,
-          response.successCount ? 'warning' : 'error',
-        );
-      }
+      promptInput.value = '';
+      window.close();
+      return;
     } catch (error) {
       setStatus(error instanceof Error ? error.message : String(error), 'error');
     } finally {

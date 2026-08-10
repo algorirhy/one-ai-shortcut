@@ -47,9 +47,15 @@ test('Gemini new-chat URL preserves the existing Google account path', () => {
 
 test('manifest loads shared config before the content script', () => {
   const manifest = JSON.parse(read('manifest.json'));
-  assert.equal(manifest.version, '1.1.1');
-  assert.deepEqual(manifest.permissions, ['tabs']);
-  assert.deepEqual(manifest.content_scripts[0].js, ['sites.js', 'content.js']);
+  assert.equal(manifest.version, '1.2.0');
+  assert.deepEqual(manifest.permissions, ['tabs', 'notifications']);
+  assert.deepEqual(manifest.content_scripts[0], {
+    matches: ['https://www.doubao.com/*', 'https://doubao.com/*'],
+    js: ['doubao-main.js'],
+    run_at: 'document_start',
+    world: 'MAIN',
+  });
+  assert.deepEqual(manifest.content_scripts[1].js, ['sites.js', 'content.js']);
 });
 
 test('popup uses external scripts compatible with Manifest V3 CSP', () => {

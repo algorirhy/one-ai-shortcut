@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "One Shortcut for AI Chat",
-  "version": "1.0.0",
-  "description": "One shortcut to start chats across six major AI assistants, plus ⌘K chat search across ChatGPT, Claude, Gemini, and Grok.",
-  "permissions": [],
+  "version": "1.1.0",
+  "description": "Send one prompt to new chats across six AI assistants, with unified new-chat and chat-search shortcuts.",
+  "permissions": ["tabs"],
   "commands": {
     "new-chat": {
       "suggested_key": {
@@ -19,16 +19,16 @@
   "content_scripts": [
     {
       "matches": [
-        "https://www.doubao.com/*",
-        "https://doubao.com/*",
         "https://chatgpt.com/*",
-        "https://grok.com/*",
         "https://claude.ai/*",
         "https://gemini.google.com/*",
+        "https://grok.com/*",
         "https://chat.deepseek.com/*",
-        "https://www.deepseek.com/*"
+        "https://www.deepseek.com/*",
+        "https://www.doubao.com/*",
+        "https://doubao.com/*"
       ],
-      "js": ["content.js"],
+      "js": ["sites.js", "content.js"],
       "run_at": "document_idle"
     }
   ],

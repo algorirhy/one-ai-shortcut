@@ -5,196 +5,259 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>One Shortcut for AI Chat</title>
   <style>
-    /* ─── Reset & Base ─────────────────────────────── */
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    body {
-      width: 320px;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
-      background: #1a1a2e;
-      color: #e0e0e0;
-      overflow: hidden;
+    :root {
+      color-scheme: dark;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
     }
 
-    /* ─── Header ───────────────────────────────────── */
+    body {
+      width: 360px;
+      background: #15182b;
+      color: #e5e7eb;
+    }
+
+    button, textarea, input { font: inherit; }
+
     .header {
-      padding: 20px 20px 12px;
-      text-align: center;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      padding: 18px 18px 14px;
+      background: linear-gradient(135deg, #191c33 0%, #15223c 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
 
     .header h1 {
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
+      font-size: 16px;
+      font-weight: 750;
+      letter-spacing: 0.3px;
       background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
 
-    .shortcut-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      margin-top: 10px;
-      padding: 6px 14px;
-      background: rgba(167, 139, 250, 0.12);
-      border: 1px solid rgba(167, 139, 250, 0.25);
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #c4b5fd;
-      letter-spacing: 0.5px;
-    }
-
-    .shortcut-badge kbd {
-      display: inline-block;
-      padding: 2px 6px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 4px;
-      font-family: inherit;
-      font-size: 12px;
-      color: #e0e0e0;
-      line-height: 1.2;
-    }
-
-    .header-subtitle {
-      margin-top: 10px;
-      font-size: 11px;
-      line-height: 1.5;
+    .header p {
+      margin-top: 6px;
       color: #94a3b8;
+      font-size: 12px;
+      line-height: 1.45;
     }
 
-    /* ─── Site List ─────────────────────────────────── */
+    .composer {
+      padding: 14px 16px 16px;
+    }
+
+    .prompt-label {
+      display: block;
+      margin-bottom: 7px;
+      color: #cbd5e1;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    #prompt-input {
+      display: block;
+      width: 100%;
+      min-height: 104px;
+      max-height: 190px;
+      padding: 11px 12px;
+      resize: vertical;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 10px;
+      outline: none;
+      background: #0f1324;
+      color: #f8fafc;
+      font-size: 13px;
+      line-height: 1.5;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #prompt-input::placeholder { color: #64748b; }
+
+    #prompt-input:focus {
+      border-color: #818cf8;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.16);
+    }
+
+    .selection-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 14px 2px 7px;
+    }
+
+    .selection-count {
+      color: #cbd5e1;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    #toggle-all {
+      border: 0;
+      background: transparent;
+      color: #8b9cff;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    #toggle-all:hover { color: #a5b4fc; }
+
     .site-list {
-      padding: 8px 12px 14px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
     }
 
-    .site-item {
+    .site-option {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 9px 12px;
-      border-radius: 10px;
-      transition: background 0.2s ease;
+      min-height: 38px;
+      padding: 7px 9px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
     }
 
-    .site-item:hover {
-      background: rgba(255, 255, 255, 0.05);
+    .site-option:hover { background: rgba(255, 255, 255, 0.04); }
+
+    .site-option:has(input:checked) {
+      background: rgba(99, 102, 241, 0.08);
+      border-color: rgba(129, 140, 248, 0.12);
+    }
+
+    .site-option input {
+      width: 15px;
+      height: 15px;
+      margin-right: 10px;
+      accent-color: #818cf8;
+      cursor: pointer;
     }
 
     .site-dot {
       width: 8px;
       height: 8px;
+      margin-right: 9px;
       border-radius: 50%;
-      flex-shrink: 0;
+      flex: 0 0 auto;
     }
 
     .site-name {
-      font-size: 13px;
-      font-weight: 500;
-      color: #d1d5db;
       flex: 1;
+      color: #e2e8f0;
+      font-size: 13px;
+      font-weight: 600;
     }
 
     .site-url {
-      font-size: 11px;
-      color: #6b7280;
-      font-weight: 400;
+      color: #64748b;
+      font-size: 10px;
     }
 
-    /* Dot colors per site */
-    .dot-doubao    { background: #3b82f6; }
-    .dot-chatgpt   { background: #10b981; }
-    .dot-grok      { background: #f43f5e; }
-    .dot-claude    { background: #f59e0b; }
-    .dot-gemini    { background: #8b5cf6; }
-    .dot-deepseek  { background: #06b6d4; }
+    #send-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 42px;
+      margin-top: 14px;
+      border: 0;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #6366f1, #4f8bea);
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      transition: filter 0.15s ease, opacity 0.15s ease;
+    }
 
-    /* ─── Footer ───────────────────────────────────── */
+    #send-button:hover:not(:disabled) { filter: brightness(1.08); }
+
+    #send-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    .spinner {
+      display: none;
+      width: 14px;
+      height: 14px;
+      margin-right: 8px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    #send-button.busy .spinner { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #status {
+      display: none;
+      margin-top: 10px;
+      padding: 9px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    #status.visible { display: block; }
+    #status.success { background: rgba(16, 185, 129, 0.1); color: #6ee7b7; }
+    #status.warning { background: rgba(245, 158, 11, 0.1); color: #fcd34d; }
+    #status.error { background: rgba(244, 63, 94, 0.1); color: #fda4af; }
+
     .footer {
-      padding: 10px 20px 14px;
-      text-align: center;
+      padding: 10px 16px 12px;
       border-top: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .footer p {
-      font-size: 11px;
-      color: #4b5563;
+      color: #64748b;
+      text-align: center;
+      font-size: 10px;
       line-height: 1.5;
     }
 
-    .footer a {
-      color: #818cf8;
-      text-decoration: none;
-    }
-
-    .footer a:hover {
-      text-decoration: underline;
-    }
+    .footer a { color: #818cf8; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+    kbd { font-family: inherit; color: #94a3b8; }
   </style>
 </head>
 <body>
-
-  <div class="header">
+  <header class="header">
     <h1>One Shortcut for AI Chat</h1>
-    <div class="shortcut-badge">
-      <kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>O</kbd>
-    </div>
-    <p class="header-subtitle">Use one shortcut to start chats across six major AI assistants, plus <kbd>⌘</kbd> <kbd>K</kbd> search across ChatGPT, Claude, Gemini, and Grok.</p>
-  </div>
+    <p>Start the same new conversation across your selected AI assistants.</p>
+  </header>
 
-  <div class="site-list">
-    <div class="site-item">
-      <span class="site-dot dot-chatgpt"></span>
-      <span class="site-name">ChatGPT</span>
-      <span class="site-url">chatgpt.com</span>
-    </div>
-    <div class="site-item">
-      <span class="site-dot dot-claude"></span>
-      <span class="site-name">Claude</span>
-      <span class="site-url">claude.ai</span>
-    </div>
-    <div class="site-item">
-      <span class="site-dot dot-gemini"></span>
-      <span class="site-name">Gemini</span>
-      <span class="site-url">gemini.google.com</span>
-    </div>
-    <div class="site-item">
-      <span class="site-dot dot-grok"></span>
-      <span class="site-name">Grok</span>
-      <span class="site-url">grok.com</span>
-    </div>
-    <div class="site-item">
-      <span class="site-dot dot-deepseek"></span>
-      <span class="site-name">DeepSeek</span>
-      <span class="site-url">chat.deepseek.com</span>
-    </div>
-    <div class="site-item">
-      <span class="site-dot dot-doubao"></span>
-      <span class="site-name">Doubao</span>
-      <span class="site-url">doubao.com</span>
-    </div>
-  </div>
+  <main class="composer">
+    <form id="prompt-form">
+      <label class="prompt-label" for="prompt-input">Message</label>
+      <textarea
+        id="prompt-input"
+        placeholder="Type a message to send..."
+        aria-describedby="send-hint"
+        autofocus
+      ></textarea>
 
-  <div class="footer">
-    <p>Use <strong>⇧⌘O</strong> for a new chat on supported sites.<br/>
-    Gemini is remapped from <strong>⇧⌘K</strong> to <strong>⌘K</strong> to match ChatGPT, Claude, and Grok.<br/>
-    Customize the new-chat shortcut in <a href="#" id="shortcut-link">chrome://extensions/shortcuts</a></p>
-  </div>
+      <div class="selection-header">
+        <span class="selection-count" id="selection-count">6 selected</span>
+        <button type="button" id="toggle-all">Deselect all</button>
+      </div>
 
-  <script>
-    // Chrome doesn't allow direct navigation to chrome:// URLs,
-    // so we open the shortcuts page via the Chrome API.
-    document.getElementById('shortcut-link').addEventListener('click', (e) => {
-      e.preventDefault();
-      chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
-    });
-  </script>
+      <div class="site-list" id="site-list"></div>
+
+      <button type="submit" id="send-button" disabled>
+        <span class="spinner" aria-hidden="true"></span>
+        <span id="send-button-text">Send to 6 assistants</span>
+      </button>
+      <p id="send-hint" class="footer-hint" hidden>Press Command or Control plus Enter to send.</p>
+      <div id="status" role="status" aria-live="polite"></div>
+    </form>
+  </main>
+
+  <footer class="footer">
+    <kbd>⇧⌘O</kbd> starts a new chat on the current supported site.
+    <a href="#" id="shortcut-link">Customize shortcut</a>
+  </footer>
+
+  <script src="sites.js"></script>
+  <script src="popup.js"></script>
 </body>
 </html>

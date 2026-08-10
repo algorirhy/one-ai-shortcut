@@ -1,6 +1,5 @@
-// Content script — runs on supported AI assistant pages.
-// When receiving the "new-chat" message from the background worker,
-// it triggers a new chat using site-specific strategies.
+// Content script for supported AI assistant pages.
+// Handles unified shortcuts and site-specific prompt entry/submission.
 
 (() => {
   'use strict';
@@ -8,149 +7,68 @@
   const LOG_PREFIX = '[One Shortcut for AI Chat]';
   const IS_MAC = navigator.platform.toUpperCase().includes('MAC');
 
-  // ─── Site Definitions ───────────────────────────────────────────────
-  // Each entry defines how to trigger "New Chat" on a specific site.
-  //
-  // Strategy (executed in order, stops at first success):
-  //   1. `selectors`  — try clicking a matching DOM element
-  //   2. `textMatch`  — find a clickable element by visible text
-  //   3. `url`/`urlFn`— navigate to the "new chat" URL (always works)
-
-  const SITES = [
-    {
-      name: 'Doubao',
-      match: (host) => host.includes('doubao.com'),
-      selectors: [
-        '[data-testid="new-chat"]',
-        'a[href="/chat/new"]',
-        'a[href="/chat"]',
-      ],
-      textMatch: ['新对话', '新建对话'],
-      url: 'https://www.doubao.com/chat/',
-    },
-    {
-      name: 'ChatGPT',
-      match: (host) => host.includes('chatgpt.com'),
-      selectors: [
-        'a[data-testid="create-new-chat-button"]',
-        'button[data-testid="create-new-chat-button"]',
-      ],
-      textMatch: ['New chat', 'New Chat'],
-      url: 'https://chatgpt.com/',
-    },
-    {
-      name: 'Grok',
-      match: (host) => host.includes('grok.com'),
-      selectors: [
-        'a[aria-label*="New chat"]',
-        'a[aria-label*="new chat"]',
-        'button[aria-label*="New chat"]',
-      ],
-      textMatch: ['New chat'],
-      url: 'https://grok.com/',
-    },
-    {
-      name: 'Claude',
-      match: (host) => host.includes('claude.ai'),
-      selectors: [
-        'a[href="/new"]',
-        'a[data-testid="new-chat"]',
-        'button[aria-label*="New chat"]',
-        'a[aria-label*="New chat"]',
-      ],
-      textMatch: ['New chat', 'Start new chat'],
-      url: 'https://claude.ai/new',
-    },
-    {
-      name: 'Gemini',
-      match: (host) => host.includes('gemini.google.com'),
-      selectors: [
-        'button[aria-label*="New chat"]',
-        'a[aria-label*="New chat"]',
-        'button[data-test-id="new-chat"]',
-      ],
-      textMatch: ['New chat'],
-      url: null,
-      urlFn: () => {
-        const m = window.location.pathname.match(/\/u\/\d+/);
-        return m
-          ? `https://gemini.google.com${m[0]}/app`
-          : 'https://gemini.google.com/app';
-      },
-    },
-    {
-      name: 'DeepSeek',
-      match: (host) => host.includes('deepseek.com'),
-      selectors: [
-        'div[class*="new-chat"]',
-        'a[class*="new-chat"]',
-        'button[class*="new-chat"]',
-      ],
-      textMatch: ['New chat', '新建对话', '新对话'],
-      url: 'https://chat.deepseek.com/',
-    },
-  ];
-
-  // ─── Helpers ────────────────────────────────────────────────────────
-
-  /**
-   * Try to click the first element matching any of the given CSS selectors.
-   * Only clicks elements that are visible (has an offsetParent or is the body).
-   */
-  function tryClickSelectors(selectors) {
-    for (const sel of selectors) {
-      try {
-        const els = document.querySelectorAll(sel);
-        for (const el of els) {
-          if (isVisible(el)) {
-            el.click();
-            console.log(`${LOG_PREFIX} Clicked selector: ${sel}`);
-            return true;
-          }
-        }
-      } catch (e) {
-        // Invalid selector, skip
-      }
-    }
-    return false;
+  function currentSite() {
+    return OneAIShortcut.findSiteByUrl(window.location.href);
   }
 
-  /**
-   * Try to find and click a visible element whose text content matches.
-   * Only searches common interactive element types.
-   */
-  function tryClickByText(texts) {
-    // Search through interactive elements
-    const tags = ['a', 'button', 'div[role="button"]', 'span[role="button"]'];
-    for (const tag of tags) {
-      const els = document.querySelectorAll(tag);
-      for (const el of els) {
-        const elText = (el.textContent || '').trim();
-        for (const text of texts) {
-          if (elText === text && isVisible(el)) {
-            el.click();
-            console.log(`${LOG_PREFIX} Clicked element with text: "${text}"`);
-            return true;
-          }
-        }
-      }
-    }
-    return false;
+  function delay(milliseconds) {
+    return new Promise((resolve) => setTimeout(resolve, milliseconds));
   }
 
-  /**
-   * Check if an element is visible in the viewport.
-   */
-  function isVisible(el) {
-    if (!el) return false;
-    const style = window.getComputedStyle(el);
+  function isVisible(element) {
+    if (!element || !element.isConnected) return false;
+    const style = window.getComputedStyle(element);
     return (
       style.display !== 'none' &&
       style.visibility !== 'hidden' &&
       style.opacity !== '0' &&
-      el.offsetWidth > 0 &&
-      el.offsetHeight > 0
+      element.getClientRects().length > 0
     );
+  }
+
+  function isEnabled(element) {
+    if (!element || !isVisible(element)) return false;
+    if (element.matches(':disabled')) return false;
+    if (element.getAttribute('aria-disabled') === 'true') return false;
+    if (element.getAttribute('data-disabled') === 'true') return false;
+    return window.getComputedStyle(element).pointerEvents !== 'none';
+  }
+
+  function findVisibleElement(selectors, predicate = isVisible) {
+    for (const selector of selectors) {
+      try {
+        const matches = [...document.querySelectorAll(selector)]
+          .filter(predicate)
+          .sort((left, right) => (
+            right.getBoundingClientRect().bottom - left.getBoundingClientRect().bottom
+          ));
+        if (matches.length) return matches[0];
+      } catch (_error) {
+        // Ignore a selector if a site update makes it invalid.
+      }
+    }
+    return null;
+  }
+
+  function tryClickSelectors(selectors) {
+    const element = findVisibleElement(selectors);
+    if (!element) return false;
+    element.click();
+    return true;
+  }
+
+  function tryClickByText(texts) {
+    const selectors = ['a', 'button', '[role="button"]'];
+    for (const selector of selectors) {
+      for (const element of document.querySelectorAll(selector)) {
+        const text = (element.textContent || '').trim();
+        if (texts.includes(text) && isVisible(element)) {
+          element.click();
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   function isPrimaryModifierPressed(event) {
@@ -167,40 +85,32 @@
     );
   }
 
-  /**
-   * Navigate to the new-chat URL.
-   */
   function navigateToNewChat(site) {
-    const url = site.urlFn ? site.urlFn() : site.url;
-    if (url) {
-      window.location.href = url;
-      console.log(`${LOG_PREFIX} Navigated to: ${url}`);
-    }
+    const url = OneAIShortcut.getNewChatUrl(site.id, window.location.href);
+    if (url) window.location.href = url;
   }
 
-  /**
-   * Try to open Gemini's "Search chats" panel.
-   * We prefer clicking the real UI entry, then fall back to dispatching
-   * Gemini's built-in Shift+Cmd/Ctrl+K shortcut.
-   */
+  function handleNewChat() {
+    const site = currentSite();
+    if (!site) return false;
+
+    if (tryClickSelectors(site.newChatSelectors)) return true;
+    if (tryClickByText(site.newChatTexts)) return true;
+
+    navigateToNewChat(site);
+    return true;
+  }
+
   function openGeminiSearchChats() {
     const searchSelectors = [
-      'button[aria-label*="Search"]',
-      'button[aria-label*="search"]',
-      'a[aria-label*="Search"]',
-      'a[aria-label*="search"]',
+      'button[aria-label*="Search" i]',
+      'a[aria-label*="Search" i]',
       '[data-test-id="search"]',
     ];
 
-    if (tryClickSelectors(searchSelectors)) {
-      return true;
-    }
+    if (tryClickSelectors(searchSelectors)) return true;
+    if (tryClickByText(['Search chats', 'Search'])) return true;
 
-    if (tryClickByText(['Search chats', 'Search'])) {
-      return true;
-    }
-
-    const modifierKey = IS_MAC ? 'Meta' : 'Control';
     const eventInit = {
       key: 'K',
       code: 'KeyK',
@@ -214,78 +124,211 @@
 
     document.dispatchEvent(new KeyboardEvent('keydown', eventInit));
     document.dispatchEvent(new KeyboardEvent('keyup', eventInit));
-    console.log(`${LOG_PREFIX} Fallback dispatched ${modifierKey}+Shift+K for Gemini search`);
     return true;
   }
 
-  /**
-   * Normalize the new-chat shortcut to Cmd/Ctrl+Shift+O at page level.
-   * This avoids browser-level shortcut conflicts preventing the extension
-   * command from reaching supported sites consistently.
-   */
   function handleNewChatShortcut(event) {
-    if (!matchesShortcut(event, 'o', { shiftKey: true })) {
-      return;
-    }
-
+    if (!matchesShortcut(event, 'o', { shiftKey: true })) return;
     event.preventDefault();
     event.stopPropagation();
     handleNewChat();
   }
 
-  /**
-   * Normalize Gemini's search shortcut from Shift+Cmd/Ctrl+K to Cmd/Ctrl+K.
-   */
   function handleGeminiSearchShortcut(event) {
-    if (!window.location.hostname.includes('gemini.google.com')) {
-      return;
-    }
-
-    if (!matchesShortcut(event, 'k')) {
-      return;
-    }
-
+    if (currentSite()?.id !== 'gemini' || !matchesShortcut(event, 'k')) return;
     event.preventDefault();
     event.stopPropagation();
     openGeminiSearchChats();
   }
 
-  // ─── Main Handler ──────────────────────────────────────────────────
-
-  function handleNewChat() {
-    const host = window.location.hostname;
-    const site = SITES.find((s) => s.match(host));
-
-    if (!site) {
-      console.warn(`${LOG_PREFIX} Current site is not supported.`);
-      return;
-    }
-
-    console.log(`${LOG_PREFIX} Detected site: ${site.name}`);
-
-    // Strategy 1: Try clicking via CSS selector
-    if (site.selectors && tryClickSelectors(site.selectors)) {
-      return;
-    }
-    console.log(`${LOG_PREFIX} Selectors did not match, trying text match...`);
-
-    // Strategy 2: Try clicking by visible text content
-    if (site.textMatch && tryClickByText(site.textMatch)) {
-      return;
-    }
-    console.log(`${LOG_PREFIX} Text match did not work, navigating to URL...`);
-
-    // Strategy 3: Navigate directly (always works)
-    navigateToNewChat(site);
+  function isPromptEditor(element) {
+    if (!isEnabled(element)) return false;
+    return (
+      element instanceof HTMLTextAreaElement ||
+      element instanceof HTMLInputElement ||
+      element.isContentEditable ||
+      element.getAttribute('contenteditable') === 'true'
+    );
   }
 
-  // ─── Message Listener ──────────────────────────────────────────────
+  async function waitForPromptEditor(site, timeoutMs = 20000) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      const editor = findVisibleElement(site.inputSelectors, isPromptEditor);
+      if (editor) return editor;
+      await delay(250);
+    }
+    throw new Error(`Could not find the ${site.name} message input.`);
+  }
+
+  function dispatchInputEvents(element, text) {
+    try {
+      element.dispatchEvent(new InputEvent('input', {
+        bubbles: true,
+        composed: true,
+        data: text,
+        inputType: 'insertText',
+      }));
+    } catch (_error) {
+      element.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+    }
+    element.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function setNativeInputValue(element, text) {
+    const prototype = element instanceof HTMLTextAreaElement
+      ? HTMLTextAreaElement.prototype
+      : HTMLInputElement.prototype;
+    const setter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+
+    element.focus();
+    if (setter) setter.call(element, text);
+    else element.value = text;
+    dispatchInputEvents(element, text);
+  }
+
+  function replaceContentEditableValue(element, text) {
+    const fragment = document.createDocumentFragment();
+    for (const line of text.split('\n')) {
+      const paragraph = document.createElement('p');
+      if (line) paragraph.textContent = line;
+      else paragraph.append(document.createElement('br'));
+      fragment.append(paragraph);
+    }
+    element.replaceChildren(fragment);
+  }
+
+  function setContentEditableValue(element, text) {
+    element.focus();
+
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    let inserted = false;
+    try {
+      inserted = document.execCommand('insertText', false, text);
+    } catch (_error) {
+      inserted = false;
+    }
+
+    selection.removeAllRanges();
+    if (!inserted || readEditorText(element).trim() !== text.trim()) {
+      replaceContentEditableValue(element, text);
+    }
+    dispatchInputEvents(element, text);
+  }
+
+  function readEditorText(element) {
+    if (element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement) {
+      return element.value;
+    }
+    return element.innerText || element.textContent || '';
+  }
+
+  async function fillPrompt(editor, prompt) {
+    if (editor instanceof HTMLTextAreaElement || editor instanceof HTMLInputElement) {
+      setNativeInputValue(editor, prompt);
+    } else {
+      setContentEditableValue(editor, prompt);
+    }
+
+    const deadline = Date.now() + 2000;
+    while (Date.now() < deadline) {
+      if (readEditorText(editor).trim() === prompt.trim()) return;
+      await delay(100);
+    }
+
+    throw new Error('The message input did not accept the prompt.');
+  }
+
+  async function waitForSendButton(site, timeoutMs = 6000) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      const button = findVisibleElement(site.sendSelectors, isEnabled);
+      if (button) return button;
+      await delay(150);
+    }
+    return null;
+  }
+
+  function submitWithEnter(editor) {
+    const eventInit = {
+      key: 'Enter',
+      code: 'Enter',
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      shiftKey: false,
+      metaKey: false,
+      ctrlKey: false,
+      altKey: false,
+    };
+
+    editor.focus();
+    editor.dispatchEvent(new KeyboardEvent('keydown', eventInit));
+    editor.dispatchEvent(new KeyboardEvent('keypress', eventInit));
+    editor.dispatchEvent(new KeyboardEvent('keyup', eventInit));
+  }
+
+  async function sendPrompt(site, editor) {
+    const sendButton = await waitForSendButton(site);
+    if (sendButton) {
+      sendButton.click();
+      return 'button';
+    }
+
+    const form = editor.closest('form');
+    if (form?.requestSubmit) {
+      form.requestSubmit();
+      return 'form';
+    }
+
+    submitWithEnter(editor);
+    return 'enter';
+  }
+
+  async function submitPrompt(prompt) {
+    const site = currentSite();
+    if (!site) throw new Error('This page is not a supported AI assistant.');
+    if (typeof prompt !== 'string' || !prompt.trim()) {
+      throw new Error('The prompt is empty.');
+    }
+
+    const editor = await waitForPromptEditor(site);
+    await fillPrompt(editor, prompt);
+    await delay(150);
+    const method = await sendPrompt(site, editor);
+
+    console.log(`${LOG_PREFIX} Sent a prompt to ${site.name} using ${method}.`);
+    return { ok: true, siteId: site.id, method };
+  }
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message.action === 'new-chat') {
-      handleNewChat();
-      sendResponse({ ok: true });
+    if (message?.action === 'ping') {
+      const site = currentSite();
+      sendResponse({ ok: Boolean(site), siteId: site?.id || null });
+      return false;
     }
+
+    if (message?.action === 'new-chat') {
+      sendResponse({ ok: handleNewChat() });
+      return false;
+    }
+
+    if (message?.action === 'submit-prompt') {
+      submitPrompt(message.prompt)
+        .then(sendResponse)
+        .catch((error) => sendResponse({
+          ok: false,
+          error: error instanceof Error ? error.message : String(error),
+        }));
+      return true;
+    }
+
+    return false;
   });
 
   document.addEventListener('keydown', handleNewChatShortcut, true);

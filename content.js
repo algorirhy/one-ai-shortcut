@@ -265,6 +265,9 @@
       metaKey: false,
       ctrlKey: false,
       altKey: false,
+      keyCode: 13,
+      which: 13,
+      charCode: 13,
     };
 
     editor.focus();
@@ -273,9 +276,60 @@
     editor.dispatchEvent(new KeyboardEvent('keyup', eventInit));
   }
 
-  async function sendPrompt(site, editor) {
+  function clickWithPointerSequence(button) {
+    const rect = button.getBoundingClientRect();
+    const eventInit = {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      view: window,
+      button: 0,
+      buttons: 1,
+      detail: 1,
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2,
+    };
+
+    button.focus();
+    for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
+      const EventConstructor = type.startsWith('pointer') && typeof PointerEvent === 'function'
+        ? PointerEvent
+        : MouseEvent;
+      const isDown = type === 'pointerdown' || type === 'mousedown';
+      button.dispatchEvent(new EventConstructor(type, {
+        ...eventInit,
+        buttons: isDown ? 1 : 0,
+        pointerId: 1,
+        pointerType: 'mouse',
+        isPrimary: true,
+      }));
+    }
+  }
+
+  async function waitForPromptToClear(editor, prompt, timeoutMs = 2500) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      if (!editor.isConnected || !readEditorText(editor).trim()) return true;
+      await delay(100);
+    }
+    return readEditorText(editor).trim() !== prompt.trim();
+  }
+
+  async function sendPrompt(site, editor, prompt) {
     const sendButton = await waitForSendButton(site);
     if (sendButton) {
+      if (site.id === 'doubao') {
+        // Doubao ignores HTMLElement.click(), so dispatch the pointer/mouse
+        // sequence used by its send-button handler.
+        clickWithPointerSequence(sendButton);
+        if (await waitForPromptToClear(editor, prompt)) return 'pointer-sequence';
+
+        submitWithEnter(editor);
+        if (await waitForPromptToClear(editor, prompt)) return 'enter-fallback';
+
+        throw new Error('Doubao kept the prompt in the input after submission.');
+      }
+
       sendButton.click();
       return 'button';
     }
@@ -300,7 +354,7 @@
     const editor = await waitForPromptEditor(site);
     await fillPrompt(editor, prompt);
     await delay(150);
-    const method = await sendPrompt(site, editor);
+    const method = await sendPrompt(site, editor, prompt);
 
     console.log(`${LOG_PREFIX} Sent a prompt to ${site.name} using ${method}.`);
     return { ok: true, siteId: site.id, method };

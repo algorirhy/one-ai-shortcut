@@ -40,4 +40,4 @@
 
 ## 仓库地址
 
-GitHub：[algorirhy/one_ai_shortcut](https://github.com/algorirhy/one_ai_shortcut)
+GitHub：[algorirhy/one-ai-shortcut](https://github.com/algorirhy/one-ai-shortcut)

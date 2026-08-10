@@ -153,7 +153,7 @@ async function notifyFailures(results) {
   try {
     await chrome.notifications.create({
       type: 'basic',
-      iconUrl: 'icons/icon.svg',
+      iconUrl: 'icons/icon-128.png',
       title: 'Some prompts were not sent',
       message,
       priority: 1,

@@ -35,6 +35,19 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
 
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .brand-icon {
+      width: 26px;
+      height: 26px;
+      flex: 0 0 auto;
+      border-radius: 7px;
+    }
+
     .header h1 {
       font-size: 16px;
       font-weight: 750;
@@ -233,7 +246,10 @@
 </head>
 <body>
   <header class="header">
-    <h1>One Shortcut for AI Chat</h1>
+    <div class="brand">
+      <img class="brand-icon" src="icons/icon.svg" alt="" width="26" height="26" />
+      <h1>One Shortcut for AI Chat</h1>
+    </div>
     <p>Start the same new conversation across your selected AI assistants.</p>
   </header>
 

@@ -47,8 +47,21 @@ test('Gemini new-chat URL preserves the existing Google account path', () => {
 
 test('manifest loads shared config before the content script', () => {
   const manifest = JSON.parse(read('manifest.json'));
-  assert.equal(manifest.version, '1.2.1');
+  assert.equal(manifest.version, '1.3.0');
   assert.deepEqual(manifest.permissions, ['tabs', 'notifications']);
+  assert.deepEqual(manifest.icons, {
+    16: 'icons/icon-16.png',
+    32: 'icons/icon-32.png',
+    48: 'icons/icon-48.png',
+    128: 'icons/icon-128.png',
+  });
+  assert.deepEqual(manifest.action.default_icon, {
+    16: 'icons/icon-16.png',
+    32: 'icons/icon-32.png',
+  });
+  for (const iconPath of Object.values(manifest.icons)) {
+    assert.equal(fs.existsSync(path.join(projectRoot, iconPath)), true, `${iconPath} is missing`);
+  }
   assert.deepEqual(manifest.content_scripts[0], {
     matches: ['https://www.doubao.com/*', 'https://doubao.com/*'],
     js: ['doubao-main.js'],

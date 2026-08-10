@@ -18,16 +18,6 @@
 
   const SITES = [
     {
-      name: 'Kimi',
-      match: (host) => host.includes('kimi.com'),
-      selectors: [
-        'a[href*="chat_enter_method=new_chat"]',
-        '[data-testid="new-chat"]',
-      ],
-      textMatch: ['新建会话'],
-      url: 'https://www.kimi.com/',
-    },
-    {
       name: 'Doubao',
       match: (host) => host.includes('doubao.com'),
       selectors: [

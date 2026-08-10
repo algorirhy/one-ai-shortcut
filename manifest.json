@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "One Shortcut for AI Chat",
   "version": "1.0.0",
-  "description": "One shortcut to start chats across seven major AI assistants, plus ⌘K chat search across ChatGPT, Claude, Gemini, and Grok.",
+  "description": "One shortcut to start chats across six major AI assistants, plus ⌘K chat search across ChatGPT, Claude, Gemini, and Grok.",
   "permissions": [],
   "commands": {
     "new-chat": {
@@ -19,8 +19,6 @@
   "content_scripts": [
     {
       "matches": [
-        "https://www.kimi.com/*",
-        "https://kimi.com/*",
         "https://www.doubao.com/*",
         "https://doubao.com/*",
         "https://chatgpt.com/*",

@@ -23,9 +23,19 @@ function matchesPattern(url, pattern) {
   return url.startsWith(pattern.replace('*', ''));
 }
 
-function createHarness(initialTabs, { failSubmitFor = [] } = {}) {
+function createHarness(initialTabs, {
+  failSubmitFor = [],
+  manualSubmitFor = [],
+  submitGate = null,
+} = {}) {
   const tabs = initialTabs.map((tab) => ({ status: 'complete', ...tab }));
-  const records = { created: [], updated: [], submitted: [], notifications: [] };
+  const records = {
+    acknowledgements: [],
+    created: [],
+    updated: [],
+    submitted: [],
+    notifications: [],
+  };
   let runtimeMessageListener;
   let nextTabId = 100;
 
@@ -79,11 +89,21 @@ function createHarness(initialTabs, { failSubmitFor = [] } = {}) {
           return { ok: true, siteId: siteIdFromUrl(tab.url) };
         }
         if (message.action === 'submit-prompt') {
+          if (submitGate) await submitGate;
           if (failSubmitFor.includes(siteIdFromUrl(tab.url))) {
             throw new Error('Simulated site failure');
           }
-          records.submitted.push({ tabId, prompt: message.prompt });
-          return { ok: true, method: 'button' };
+          records.submitted.push({
+            tabId,
+            prompt: message.prompt,
+            attachments: JSON.parse(JSON.stringify(message.attachments)),
+          });
+          const siteId = siteIdFromUrl(tab.url);
+          return {
+            ok: true,
+            method: manualSubmitFor.includes(siteId) ? 'manual-enter' : 'button',
+            requiresUserAction: manualSubmitFor.includes(siteId),
+          };
         }
         return { ok: true };
       },
@@ -103,18 +123,36 @@ function createHarness(initialTabs, { failSubmitFor = [] } = {}) {
   };
   vm.runInContext(backgroundSource, context, { filename: 'background.js' });
 
-  async function broadcast(message) {
-    return new Promise((resolve) => {
+  async function startBroadcast(message) {
+    const acknowledgement = await new Promise((resolve) => {
       const keepChannelOpen = runtimeMessageListener(
         { action: 'broadcast-prompt', ...message },
         {},
         resolve,
       );
-      assert.equal(keepChannelOpen, true);
+      assert.equal(keepChannelOpen, false);
     });
+    assert.equal(acknowledgement.accepted, true);
+    assert.match(acknowledgement.jobId, /^broadcast-/);
+    records.acknowledgements.push(acknowledgement);
+    return acknowledgement;
   }
 
-  return { broadcast, records };
+  function waitForBroadcast(acknowledgement) {
+    const job = vm.runInContext(
+      `broadcastJobs.get(${JSON.stringify(acknowledgement.jobId)})`,
+      context,
+    );
+    assert.ok(job, 'acknowledged broadcast job is missing');
+    return job;
+  }
+
+  async function broadcast(message) {
+    const acknowledgement = await startBroadcast(message);
+    return waitForBroadcast(acknowledgement);
+  }
+
+  return { broadcast, records, startBroadcast, waitForBroadcast };
 }
 
 test('broadcast reuses the first matching tab in the preferred window', async () => {
@@ -131,12 +169,14 @@ test('broadcast reuses the first matching tab in the preferred window', async ()
   });
 
   assert.equal(response.ok, true);
+  assert.equal(harness.records.acknowledgements.length, 1);
   assert.deepEqual(harness.records.updated, [
     { tabId: 12, url: 'https://chatgpt.com/' },
   ]);
   assert.deepEqual(harness.records.submitted, [
-    { tabId: 12, prompt: 'hello' },
+    { tabId: 12, prompt: 'hello', attachments: [] },
   ]);
+  assert.equal(harness.records.notifications.length, 0);
 });
 
 test('broadcast creates an inactive tab when no matching tab exists', async () => {
@@ -157,11 +197,45 @@ test('broadcast creates an inactive tab when no matching tab exists', async () =
     },
   ]);
   assert.deepEqual(harness.records.submitted, [
-    { tabId: 100, prompt: 'compare this' },
+    { tabId: 100, prompt: 'compare this', attachments: [] },
   ]);
 });
 
-test('broadcast rejects empty prompts without touching tabs', async () => {
+test('background acknowledges the job before site delivery finishes', async () => {
+  let releaseSubmit;
+  const submitGate = new Promise((resolve) => {
+    releaseSubmit = resolve;
+  });
+  const harness = createHarness([], { submitGate });
+
+  const acknowledgement = await harness.startBroadcast({
+    prompt: 'acknowledge first',
+    siteIds: ['chatgpt'],
+    preferredWindowId: 1,
+  });
+
+  assert.equal(acknowledgement.accepted, true);
+  assert.equal(harness.records.submitted.length, 0);
+  const resultPromise = harness.waitForBroadcast(acknowledgement);
+  releaseSubmit();
+  const response = await resultPromise;
+  assert.equal(response.ok, true);
+});
+
+test('a successful six-chatbot broadcast does not show a notification', async () => {
+  const harness = createHarness([]);
+  const response = await harness.broadcast({
+    prompt: 'send quietly',
+    siteIds: ['chatgpt', 'claude', 'gemini', 'grok', 'deepseek', 'doubao'],
+    preferredWindowId: 1,
+  });
+
+  assert.equal(response.ok, true);
+  assert.equal(response.successCount, 6);
+  assert.equal(harness.records.notifications.length, 0);
+});
+
+test('broadcast rejects empty messages without touching tabs', async () => {
   const harness = createHarness([]);
   const response = await harness.broadcast({
     prompt: '   ',
@@ -170,7 +244,7 @@ test('broadcast rejects empty prompts without touching tabs', async () => {
   });
 
   assert.equal(response.ok, false);
-  assert.match(response.error, /Enter a message/);
+  assert.match(response.error, /message or add an attachment/);
   assert.equal(harness.records.created.length, 0);
   assert.equal(harness.records.updated.length, 0);
 });
@@ -191,6 +265,78 @@ test('one site failure does not stop delivery to other selected sites', async ()
     [['chatgpt', true], ['claude', false]],
   );
   assert.equal(harness.records.notifications.length, 1);
-  assert.equal(harness.records.notifications[0].title, 'Some prompts were not sent');
+  assert.equal(harness.records.notifications[0].title, 'Some messages were not sent');
   assert.match(harness.records.notifications[0].message, /Failed: Claude/);
+});
+
+test('manual submission activates the prepared tab and explains the final Enter step', async () => {
+  const harness = createHarness([], { manualSubmitFor: ['doubao'] });
+  const response = await harness.broadcast({
+    prompt: 'ready for Enter',
+    siteIds: ['doubao'],
+    preferredWindowId: 1,
+  });
+
+  assert.equal(response.ok, false);
+  assert.equal(response.successCount, 0);
+  assert.equal(response.failureCount, 1);
+  assert.equal(response.results[0].requiresUserAction, true);
+  assert.deepEqual(harness.records.updated, [{ tabId: 100, active: true }]);
+  assert.equal(harness.records.notifications.length, 1);
+  assert.equal(harness.records.notifications[0].title, 'Doubao is ready');
+  assert.match(harness.records.notifications[0].message, /Press Enter to send/);
+});
+
+test('multiple manual submissions use a grammatically correct notification title', async () => {
+  const harness = createHarness([], { manualSubmitFor: ['gemini', 'doubao'] });
+  await harness.broadcast({
+    prompt: 'ready for Enter',
+    siteIds: ['gemini', 'doubao'],
+    preferredWindowId: 1,
+  });
+
+  assert.equal(harness.records.notifications.length, 1);
+  assert.equal(harness.records.notifications[0].title, 'Gemini, Doubao are ready');
+});
+
+test('broadcast supports an attachment without prompt text', async () => {
+  const harness = createHarness([]);
+  const attachment = {
+    name: 'notes.txt',
+    type: 'text/plain',
+    size: 5,
+    lastModified: 123,
+    dataUrl: 'data:text/plain;base64,aGVsbG8=',
+  };
+
+  const response = await harness.broadcast({
+    prompt: '',
+    attachments: [attachment],
+    siteIds: ['chatgpt'],
+    preferredWindowId: 1,
+  });
+
+  assert.equal(response.ok, true);
+  assert.deepEqual(harness.records.submitted, [
+    { tabId: 100, prompt: '', attachments: [attachment] },
+  ]);
+});
+
+test('broadcast rejects attachments over the shared size limit', async () => {
+  const harness = createHarness([]);
+  const response = await harness.broadcast({
+    prompt: '',
+    attachments: [{
+      name: 'too-large.bin',
+      type: 'application/octet-stream',
+      size: 10 * 1024 * 1024 + 1,
+      dataUrl: 'data:application/octet-stream;base64,AA==',
+    }],
+    siteIds: ['chatgpt'],
+    preferredWindowId: 1,
+  });
+
+  assert.equal(response.ok, false);
+  assert.match(response.error, /per-file size limit/);
+  assert.equal(harness.records.created.length, 0);
 });

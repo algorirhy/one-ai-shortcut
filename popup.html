@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>One Shortcut for AI Chat</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       color-scheme: dark;
@@ -14,92 +14,263 @@
 
     html,
     body {
-      width: 360px;
-      min-width: 360px;
-      max-width: 360px;
+      width: 392px;
+      min-width: 392px;
+      max-width: 392px;
       overflow-x: hidden;
     }
 
     body {
       max-height: 600px;
       overflow-y: auto;
-      background: #15182b;
+      background: #121629;
       color: #e5e7eb;
     }
 
-    button, textarea, input { font: inherit; }
+    button,
+    textarea,
+    input { font: inherit; }
 
-    .header {
-      padding: 14px 16px 12px;
-      background: linear-gradient(135deg, #191c33 0%, #15223c 100%);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    button { -webkit-tap-highlight-color: transparent; }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible {
+      outline: 2px solid #a5b4fc;
+      outline-offset: 2px;
     }
 
-    .brand {
+    .header {
       display: flex;
       align-items: center;
-      gap: 9px;
+      gap: 10px;
+      padding: 13px 15px;
+      background: linear-gradient(135deg, #191c33 0%, #15223c 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
     }
 
     .brand-icon {
-      width: 26px;
-      height: 26px;
+      width: 32px;
+      height: 32px;
       flex: 0 0 auto;
-      border-radius: 7px;
     }
 
+    .brand-copy { min-width: 0; }
+
     .header h1 {
-      font-size: 16px;
-      font-weight: 750;
-      letter-spacing: 0.3px;
-      background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
+      font-size: 15px;
+      font-weight: 760;
+      letter-spacing: 0.2px;
+      background: linear-gradient(135deg, #c4b5fd, #7dd3fc, #6ee7b7);
+      background-clip: text;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      background-clip: text;
     }
 
     .header p {
-      margin-top: 4px;
-      color: #94a3b8;
-      font-size: 12px;
-      line-height: 1.45;
+      margin-top: 2px;
+      color: #8ea0ba;
+      font-size: 9.5px;
+      line-height: 1.35;
+      letter-spacing: -0.08px;
+      white-space: nowrap;
     }
 
     .composer {
-      padding: 12px 14px;
+      padding: 12px 13px 10px;
     }
 
     .prompt-label {
       display: block;
-      margin-bottom: 6px;
+      margin: 0 1px 6px;
       color: #cbd5e1;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 650;
+    }
+
+    .composer-panel {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 12px;
+      background: #0d1223;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .composer-panel:focus-within {
+      border-color: #818cf8;
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.16);
+    }
+
+    .composer-panel.dragover {
+      border-color: #6ee7b7;
+      box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.14);
     }
 
     #prompt-input {
       display: block;
       width: 100%;
-      height: 82px;
-      min-height: 82px;
-      max-height: 140px;
-      padding: 9px 10px;
-      resize: none;
-      border: 1px solid rgba(148, 163, 184, 0.24);
-      border-radius: 10px;
-      outline: none;
-      background: #0f1324;
+      height: 122px;
+      min-height: 106px;
+      max-height: 184px;
+      padding: 10px 11px 44px;
+      resize: vertical;
+      border: 0;
+      outline: 0;
+      background: transparent;
       color: #f8fafc;
       font-size: 13px;
       line-height: 1.5;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
-    #prompt-input::placeholder { color: #64748b; }
+    #prompt-input::placeholder { color: #60708b; }
 
-    #prompt-input:focus {
-      border-color: #818cf8;
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.16);
+    #prompt-input::-webkit-resizer {
+      background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M3 13L13 3M8 13L13 8' fill='none' stroke='%23a5b4fc' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") center / 16px 16px no-repeat;
+    }
+
+    .composer-toolbar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      display: flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 4px 6px 6px;
+    }
+
+    #attachment-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 26px;
+      padding: 4px 8px;
+      border: 1px solid rgba(129, 140, 248, 0.2);
+      border-radius: 8px;
+      background: rgba(99, 102, 241, 0.07);
+      color: #aeb9f8;
+      cursor: pointer;
+      font-size: 10.5px;
+      font-weight: 620;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    #attachment-button:hover:not(:disabled) {
+      border-color: rgba(129, 140, 248, 0.42);
+      background: rgba(99, 102, 241, 0.14);
+      color: #d5d9ff;
+    }
+
+    #attachment-button:active:not(:disabled) { background: rgba(99, 102, 241, 0.2); }
+
+    #attachment-button:disabled { cursor: not-allowed; opacity: 0.45; }
+
+    .attachment-icon {
+      width: 13px;
+      height: 13px;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.8;
+    }
+
+    .drop-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      place-items: center;
+      background: rgba(13, 18, 35, 0.94);
+      color: #6ee7b7;
+      font-size: 12px;
+      font-weight: 700;
+      pointer-events: none;
+    }
+
+    .composer-panel.dragover .drop-overlay { display: grid; }
+
+    #attachment-list {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 7px;
+      max-height: 104px;
+      overflow-y: auto;
+    }
+
+    #attachment-list.visible { display: flex; }
+
+    .attachment-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      padding: 4px 5px;
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      border-radius: 9px;
+      background: rgba(30, 36, 65, 0.72);
+    }
+
+    .attachment-preview {
+      display: grid;
+      width: 29px;
+      height: 29px;
+      flex: 0 0 auto;
+      place-items: center;
+      overflow: hidden;
+      border-radius: 7px;
+      background: #262d50;
+      color: #a5b4fc;
+      font-size: 8px;
+      font-weight: 760;
+      letter-spacing: 0.2px;
+    }
+
+    .attachment-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .attachment-details { min-width: 0; flex: 1; }
+
+    .attachment-name {
+      overflow: hidden;
+      color: #e2e8f0;
+      font-size: 10.5px;
+      font-weight: 620;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .attachment-size {
+      margin-top: 1px;
+      color: #70809a;
+      font-size: 9px;
+    }
+
+    .remove-attachment {
+      display: grid;
+      width: 24px;
+      height: 24px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: #71809a;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .remove-attachment:hover:not(:disabled) { background: rgba(244, 63, 94, 0.1); color: #fda4af; }
+    .remove-attachment:disabled { cursor: not-allowed; opacity: 0.4; }
+
+    .attachment-limit {
+      margin: 5px 2px 0;
+      color: #56657e;
+      font-size: 9px;
     }
 
     .selection-header {
@@ -111,102 +282,147 @@
 
     .selection-count {
       color: #cbd5e1;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 650;
     }
 
     #toggle-all {
+      padding: 3px 5px;
       border: 0;
+      border-radius: 6px;
       background: transparent;
-      color: #8b9cff;
+      color: #91a0ff;
       cursor: pointer;
-      font-size: 11px;
+      font-size: 10.5px;
+      transition: background 0.15s ease, color 0.15s ease;
     }
 
-    #toggle-all:hover { color: #a5b4fc; }
+    #toggle-all:hover:not(:disabled) { background: rgba(99, 102, 241, 0.1); color: #c4caff; }
+    #toggle-all:disabled { cursor: not-allowed; opacity: 0.45; }
 
     .site-list {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 5px;
     }
 
     .site-option {
       display: flex;
       align-items: center;
-      min-height: 34px;
+      min-width: 0;
+      min-height: 35px;
       padding: 5px 8px;
-      border: 1px solid transparent;
+      border: 1px solid rgba(148, 163, 184, 0.1);
       border-radius: 9px;
+      background: rgba(30, 36, 65, 0.42);
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    }
+
+    .site-option:hover { background: rgba(42, 49, 86, 0.68); }
+
+    .site-option:active { transform: translateY(1px); }
+
+    .site-option:has(input:checked) {
+      border-color: rgba(129, 140, 248, 0.32);
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(59, 130, 246, 0.08));
+    }
+
+    .site-option:has(input:focus-visible) {
+      box-shadow: 0 0 0 2px rgba(165, 180, 252, 0.3);
+    }
+
+    .site-option input {
+      display: grid;
+      width: 15px;
+      height: 15px;
+      margin-right: 7px;
+      appearance: none;
+      place-content: center;
+      border: 1.5px solid #64708a;
+      border-radius: 4px;
+      background: #11162a;
       cursor: pointer;
       transition: background 0.15s ease, border-color 0.15s ease;
     }
 
-    .site-option:hover { background: rgba(255, 255, 255, 0.04); }
-
-    .site-option:has(input:checked) {
-      background: rgba(99, 102, 241, 0.08);
-      border-color: rgba(129, 140, 248, 0.12);
+    .site-option input::before {
+      width: 7px;
+      height: 4px;
+      content: "";
+      border-bottom: 2px solid #fff;
+      border-left: 2px solid #fff;
+      transform: translateY(-1px) rotate(-45deg) scale(0);
+      transform-origin: center;
+      transition: transform 0.12s ease;
     }
 
-    .site-option input {
-      width: 15px;
-      height: 15px;
-      margin-right: 10px;
-      accent-color: #818cf8;
-      cursor: pointer;
+    .site-option input:checked {
+      border-color: #818cf8;
+      background: #818cf8;
+    }
+
+    .site-option input:checked::before {
+      transform: translateY(-1px) rotate(-45deg) scale(1);
     }
 
     .site-dot {
-      width: 8px;
-      height: 8px;
-      margin-right: 9px;
+      width: 7px;
+      height: 7px;
+      margin-right: 7px;
       border-radius: 50%;
       flex: 0 0 auto;
     }
 
     .site-name {
-      flex: 1;
+      overflow: hidden;
       color: #e2e8f0;
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 11.5px;
+      font-weight: 620;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
-    .site-url {
-      color: #64748b;
-      font-size: 10px;
-    }
+    .site-url { display: none; }
 
     #send-button {
       display: flex;
       align-items: center;
       justify-content: center;
       width: 100%;
-      min-height: 40px;
-      margin-top: 12px;
+      min-height: 41px;
+      margin-top: 11px;
       border: 0;
       border-radius: 10px;
-      background: linear-gradient(135deg, #6366f1, #4f8bea);
-      color: white;
+      background: linear-gradient(135deg, #6366f1, #3b82f6);
+      color: #fff;
       cursor: pointer;
-      font-size: 13px;
-      font-weight: 700;
-      transition: filter 0.15s ease, opacity 0.15s ease;
+      font-size: 12.5px;
+      font-weight: 720;
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.16);
+      transition: filter 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
     }
 
-    #send-button:hover:not(:disabled) { filter: brightness(1.08); }
+    #send-button:hover:not(:disabled) { filter: brightness(1.09); }
+
+    #send-button:active:not(:disabled) {
+      filter: brightness(0.98);
+      transform: translateY(1px);
+    }
 
     #send-button:disabled {
+      background: #27345a;
+      box-shadow: none;
+      color: #71809d;
       cursor: not-allowed;
-      opacity: 0.45;
     }
 
     .spinner {
       display: none;
       width: 14px;
       height: 14px;
-      margin-right: 8px;
-      border: 2px solid rgba(255, 255, 255, 0.35);
+      margin-right: 7px;
+      border: 2px solid rgba(255, 255, 255, 0.32);
       border-top-color: #fff;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
@@ -220,48 +436,62 @@
       margin-top: 8px;
       padding: 8px 9px;
       border-radius: 8px;
-      font-size: 11px;
-      line-height: 1.45;
+      font-size: 10.5px;
+      line-height: 1.42;
       overflow-wrap: anywhere;
     }
 
     #status.visible { display: block; }
-    #status.success { background: rgba(16, 185, 129, 0.1); color: #6ee7b7; }
-    #status.warning { background: rgba(245, 158, 11, 0.1); color: #fcd34d; }
-    #status.error { background: rgba(244, 63, 94, 0.1); color: #fda4af; }
+    #status.info { color: #bae6fd; background: rgba(14, 165, 233, 0.1); }
+    #status.error { color: #fda4af; background: rgba(244, 63, 94, 0.1); }
 
     .footer {
-      padding: 8px 12px 9px;
+      padding: 7px 12px 8px;
       border-top: 1px solid rgba(255, 255, 255, 0.06);
-      color: #64748b;
+      color: #5d6d86;
       text-align: center;
-      font-size: 10px;
-      line-height: 1.5;
+      font-size: 9.5px;
+      line-height: 1.45;
     }
 
-    .footer a { color: #818cf8; text-decoration: none; }
+    .footer a { border-radius: 3px; color: #8998ff; text-decoration: none; }
     .footer a:hover { text-decoration: underline; }
-    kbd { font-family: inherit; color: #94a3b8; }
+    kbd { font-family: inherit; color: #7b8ba5; }
   </style>
 </head>
 <body>
   <header class="header">
-    <div class="brand">
-      <img class="brand-icon" src="icons/icon.svg" alt="" width="26" height="26" />
+    <img class="brand-icon" src="icons/icon.svg" alt="" width="32" height="32" />
+    <div class="brand-copy">
       <h1>One Shortcut for AI Chat</h1>
+      <p>Send one message and the same attachments to fresh AI chats.</p>
     </div>
-    <p>Start the same new conversation across your selected AI assistants.</p>
   </header>
 
   <main class="composer">
     <form id="prompt-form">
       <label class="prompt-label" for="prompt-input">Message</label>
-      <textarea
-        id="prompt-input"
-        placeholder="Type a message to send..."
-        aria-describedby="send-hint"
-        autofocus
-      ></textarea>
+      <div class="composer-panel" id="composer-panel">
+        <textarea
+          id="prompt-input"
+          placeholder="Ask something, or attach images and files..."
+          aria-describedby="send-hint attachment-limit"
+          autofocus
+        ></textarea>
+        <div class="composer-toolbar">
+          <button type="button" id="attachment-button">
+            <svg class="attachment-icon" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M7.2 10.7 12.9 5a3 3 0 0 1 4.2 4.2l-7.2 7.2a5 5 0 0 1-7.1-7.1l7-7" />
+            </svg>
+            <span>Add images or files</span>
+          </button>
+        </div>
+        <input id="attachment-input" type="file" multiple hidden />
+        <div class="drop-overlay" aria-hidden="true">Drop files to attach</div>
+      </div>
+
+      <div id="attachment-list" aria-live="polite"></div>
+      <p class="attachment-limit" id="attachment-limit">Up to 5 files · 10 MB each · 20 MB total</p>
 
       <div class="selection-header">
         <span class="selection-count" id="selection-count">6 selected</span>
@@ -272,15 +502,16 @@
 
       <button type="submit" id="send-button" disabled>
         <span class="spinner" aria-hidden="true"></span>
-        <span id="send-button-text">Send to 6 assistants</span>
+        <span id="send-button-text">Send to 6 chatbots</span>
       </button>
-      <p id="send-hint" class="footer-hint" hidden>Press Command or Control plus Enter to send.</p>
+      <p id="send-hint" hidden>Press Command or Control plus Enter to send.</p>
       <div id="status" role="status" aria-live="polite"></div>
     </form>
   </main>
 
   <footer class="footer">
-    <kbd>⇧⌘O</kbd> new chat · <a href="#" id="shortcut-link">Customize shortcut</a>
+    <kbd>⌘↵</kbd> send · <a href="#" id="shortcut-link">Shortcuts</a> ·
+    <a href="https://github.com/algorirhy/one-ai-shortcut" id="github-link">GitHub</a>
   </footer>
 
   <script src="sites.js"></script>

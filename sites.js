@@ -5,6 +5,12 @@
 
   const freezeList = (items) => Object.freeze([...items]);
 
+  const attachmentLimits = Object.freeze({
+    maxFiles: 5,
+    maxFileSizeBytes: 10 * 1024 * 1024,
+    maxTotalSizeBytes: 20 * 1024 * 1024,
+  });
+
   const sites = [
     {
       id: 'chatgpt',
@@ -34,6 +40,18 @@
         'button[aria-label*="send" i]',
         'form button[type="submit"]',
       ],
+      fileInputSelectors: [
+        'input[type="file"][multiple]',
+        'input[type="file"]',
+      ],
+      attachmentButtonSelectors: [
+        'button[data-testid="composer-plus-btn"]',
+        'button[aria-label*="attach" i]',
+        'button[aria-label*="file" i]',
+        'button[aria-label*="upload" i]',
+        'button[aria-label*="添加" i]',
+      ],
+      attachmentButtonTexts: ['Attach files', 'Add photos & files', 'Upload from computer', '添加照片和文件'],
     },
     {
       id: 'claude',
@@ -62,6 +80,18 @@
         'button[aria-label*="send" i]',
         'form button[type="submit"]',
       ],
+      fileInputSelectors: [
+        'input[type="file"][multiple]',
+        'input[type="file"]',
+      ],
+      attachmentButtonSelectors: [
+        'button[data-testid*="file" i]',
+        'button[aria-label*="attach" i]',
+        'button[aria-label*="file" i]',
+        'button[aria-label*="upload" i]',
+        'button[aria-label*="添加" i]',
+      ],
+      attachmentButtonTexts: ['Attach files', 'Upload file', 'Add content', '添加文件'],
     },
     {
       id: 'gemini',
@@ -90,6 +120,19 @@
         'button[aria-label*="send" i]',
         'form button[type="submit"]',
       ],
+      fileInputSelectors: [
+        'input[type="file"][multiple]',
+        'input[type="file"]',
+      ],
+      attachmentButtonSelectors: [
+        'button[aria-label="Upload & tools"]',
+        'button[aria-label*="upload" i]',
+        'button[aria-label*="add file" i]',
+        'button[aria-label*="attach" i]',
+        'button[data-test-id="local-images-files-uploader-button"]',
+        'button[data-test-id*="upload" i]',
+      ],
+      attachmentButtonTexts: ['Upload files', 'Upload file', 'Files', '上传文件'],
     },
     {
       id: 'grok',
@@ -116,6 +159,17 @@
         'button[class*="send" i]',
         'form button[type="submit"]',
       ],
+      fileInputSelectors: [
+        'input[type="file"][multiple]',
+        'input[type="file"]',
+      ],
+      attachmentButtonSelectors: [
+        'button[aria-label*="attach" i]',
+        'button[aria-label*="upload" i]',
+        'button[data-testid*="upload" i]',
+        'button[data-testid*="attach" i]',
+      ],
+      attachmentButtonTexts: ['Attach', 'Attach files', 'Upload file', '添加文件'],
     },
     {
       id: 'deepseek',
@@ -140,6 +194,7 @@
         'div[contenteditable="true"]',
       ],
       sendSelectors: [
+        'div[role="button"].ds-button--primary.ds-button--filled.ds-button--circle',
         'button[data-testid="send-button"]',
         'button[aria-label*="send" i]',
         'div[role="button"][aria-label*="send" i]',
@@ -148,6 +203,17 @@
         'div[role="button"][class*="send" i]',
         'form button[type="submit"]',
       ],
+      fileInputSelectors: [
+        'input[type="file"][multiple]',
+        'input[type="file"]',
+      ],
+      attachmentButtonSelectors: [
+        'button[aria-label*="upload" i]',
+        'button[aria-label*="attach" i]',
+        'div[role="button"][aria-label*="upload" i]',
+        '[data-testid*="upload" i]',
+      ],
+      attachmentButtonTexts: ['Upload files', 'Upload file', '上传文件', '添加文件'],
     },
     {
       id: 'doubao',
@@ -172,6 +238,9 @@
         'div[contenteditable="true"]',
       ],
       sendSelectors: [
+        '#flow-end-msg-send',
+        'button:has(svg.text-g-send-msg-btn-text)',
+        'button:has(svg[class*="g-send-msg-btn"])',
         'button[data-testid="send-button"]',
         'button[aria-label*="发送"]',
         'button[aria-label*="send" i]',
@@ -180,6 +249,18 @@
         'div[role="button"][class*="send" i]',
         'form button[type="submit"]',
       ],
+      fileInputSelectors: [
+        'input[type="file"][multiple]',
+        'input[type="file"]',
+      ],
+      attachmentButtonSelectors: [
+        'button[aria-label*="upload" i]',
+        'button[aria-label*="attach" i]',
+        'button[aria-label*="file" i]',
+        '[data-testid*="upload" i]',
+        '[data-testid*="file" i]',
+      ],
+      attachmentButtonTexts: ['Upload file', 'Upload files', '上传文件', '添加文件', '文件'],
     },
   ].map((site) => Object.freeze({
     ...site,
@@ -189,6 +270,9 @@
     newChatTexts: freezeList(site.newChatTexts),
     inputSelectors: freezeList(site.inputSelectors),
     sendSelectors: freezeList(site.sendSelectors),
+    fileInputSelectors: freezeList(site.fileInputSelectors),
+    attachmentButtonSelectors: freezeList(site.attachmentButtonSelectors),
+    attachmentButtonTexts: freezeList(site.attachmentButtonTexts),
   }));
 
   const frozenSites = Object.freeze(sites);
@@ -232,5 +316,6 @@
     getSite,
     findSiteByUrl,
     getNewChatUrl,
+    attachmentLimits,
   });
 })();

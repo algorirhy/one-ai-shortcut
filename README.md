@@ -17,7 +17,7 @@ A lightweight Chrome extension that unifies shortcuts across major AI assistants
 - Grok
 - DeepSeek
 - Kimi
-- Doubao (豆包)
+- Doubao
 
 ## Install
 
@@ -31,5 +31,5 @@ A lightweight Chrome extension that unifies shortcuts across major AI assistants
 
 - New chat uses `Shift+Command+O` on macOS and `Ctrl+Shift+O` on Windows/Linux.
 - Search chats uses `Command+K` / `Ctrl+K` on ChatGPT, Claude, Gemini, and Grok.
-- DeepSeek, Kimi, and Doubao (豆包) do not support chat search yet.
+- DeepSeek, Kimi, and Doubao do not support chat search yet.
 - The new-chat shortcut can be changed in `chrome://extensions/shortcuts`.

@@ -17,7 +17,7 @@
 - Grok
 - DeepSeek
 - Kimi
-- Doubao（豆包）
+- Doubao
 
 ## 安装
 
@@ -31,7 +31,7 @@
 
 - 新建对话使用 `Shift+Command+O`（macOS）或 `Ctrl+Shift+O`（Windows/Linux）。
 - 搜索对话在 ChatGPT、Claude、Gemini 和 Grok 中统一使用 `Command+K` / `Ctrl+K`。
-- DeepSeek、Kimi 和 Doubao（豆包）暂不支持搜索对话。
+- DeepSeek、Kimi 和 Doubao 暂不支持搜索对话。
 - “新建对话”快捷键可以在 `chrome://extensions/shortcuts` 中修改。
 
 ## License

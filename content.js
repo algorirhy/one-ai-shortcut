@@ -277,7 +277,10 @@
   }
 
   function requestDoubaoMainWorldSubmit() {
-    window.dispatchEvent(new Event('one-ai-shortcut:doubao-submit'));
+    window.postMessage({
+      source: 'one-ai-shortcut',
+      action: 'doubao-submit',
+    }, window.location.origin);
   }
 
   async function waitForPromptToClear(editor, prompt, timeoutMs = 2500) {

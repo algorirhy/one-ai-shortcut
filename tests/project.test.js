@@ -47,7 +47,7 @@ test('Gemini new-chat URL preserves the existing Google account path', () => {
 
 test('manifest loads shared config before the content script', () => {
   const manifest = JSON.parse(read('manifest.json'));
-  assert.equal(manifest.version, '1.2.0');
+  assert.equal(manifest.version, '1.2.1');
   assert.deepEqual(manifest.permissions, ['tabs', 'notifications']);
   assert.deepEqual(manifest.content_scripts[0], {
     matches: ['https://www.doubao.com/*', 'https://doubao.com/*'],

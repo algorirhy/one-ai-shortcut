@@ -1,11 +1,10 @@
-// Runs in Doubao's MAIN world so its page framework receives the send action
-// in the same JavaScript world as its own event handlers.
+// Runs in Doubao's MAIN world so its React handlers can be invoked directly.
 
 (() => {
   'use strict';
 
   const INSTALL_FLAG = '__oneAIShortcutDoubaoMainInstalled';
-  const SUBMIT_EVENT = 'one-ai-shortcut:doubao-submit';
+  const MESSAGE_SOURCE = 'one-ai-shortcut';
 
   if (window[INSTALL_FLAG]) return;
   Object.defineProperty(window, INSTALL_FLAG, { value: true });
@@ -42,67 +41,88 @@
     return { editor, sendButton: null };
   }
 
-  function dispatchPointerSequence(button) {
-    const rect = button.getBoundingClientRect();
-    const base = {
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-      view: window,
-      button: 0,
-      detail: 1,
-      clientX: rect.left + rect.width / 2,
-      clientY: rect.top + rect.height / 2,
-    };
+  function findReactHandler(element, handlerName) {
+    let current = element;
+    for (let depth = 0; current && depth < 6; depth += 1) {
+      for (const key of Object.keys(current)) {
+        if (!key.startsWith('__reactProps$') && !key.startsWith('__reactEventHandlers$')) {
+          continue;
+        }
 
-    button.focus();
-    for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
-      const EventConstructor = type.startsWith('pointer') && typeof PointerEvent === 'function'
-        ? PointerEvent
-        : MouseEvent;
-      const isDown = type === 'pointerdown' || type === 'mousedown';
-      button.dispatchEvent(new EventConstructor(type, {
-        ...base,
-        buttons: isDown ? 1 : 0,
-        pointerId: 1,
-        pointerType: 'mouse',
-        isPrimary: true,
-      }));
+        const handler = current[key]?.[handlerName];
+        if (typeof handler === 'function') {
+          return { element: current, handler };
+        }
+      }
+      current = current.parentElement;
     }
+    return null;
   }
 
-  function dispatchEnter(editor) {
-    const eventInit = {
-      key: 'Enter',
-      code: 'Enter',
-      keyCode: 13,
-      which: 13,
-      charCode: 13,
-      bubbles: true,
-      cancelable: true,
-      composed: true,
+  function createReactEvent(element, overrides = {}) {
+    return {
+      isTrusted: true,
+      target: element,
+      currentTarget: element,
+      nativeEvent: { isTrusted: true },
+      defaultPrevented: false,
+      preventDefault() { this.defaultPrevented = true; },
+      stopPropagation() {},
+      persist() {},
+      ...overrides,
     };
-
-    editor.focus();
-    editor.dispatchEvent(new KeyboardEvent('keydown', eventInit));
-    editor.dispatchEvent(new KeyboardEvent('keypress', eventInit));
-    editor.dispatchEvent(new KeyboardEvent('keyup', eventInit));
   }
 
-  window.addEventListener(SUBMIT_EVENT, () => {
+  function invokeReactSubmit(composer) {
+    const clickHandler = findReactHandler(composer.sendButton, 'onClick');
+    if (clickHandler) {
+      clickHandler.handler(createReactEvent(clickHandler.element));
+      return 'react-click';
+    }
+
+    const keyHandler = findReactHandler(composer.editor, 'onKeyDown');
+    if (keyHandler) {
+      keyHandler.handler(createReactEvent(keyHandler.element, {
+        key: 'Enter',
+        code: 'Enter',
+        keyCode: 13,
+        which: 13,
+        shiftKey: false,
+        metaKey: false,
+        ctrlKey: false,
+        altKey: false,
+        nativeEvent: {
+          isTrusted: true,
+          key: 'Enter',
+          code: 'Enter',
+          keyCode: 13,
+          which: 13,
+        },
+      }));
+      return 'react-keydown';
+    }
+
+    return null;
+  }
+
+  window.addEventListener('message', (event) => {
+    if (
+      event.source !== window ||
+      event.origin !== window.location.origin ||
+      event.data?.source !== MESSAGE_SOURCE ||
+      event.data?.action !== 'doubao-submit'
+    ) {
+      return;
+    }
+
     const composer = findComposer();
     if (!composer?.editor || !composer.sendButton) return;
 
     composer.sendButton.click();
 
     window.setTimeout(() => {
-      if (!composer.editor.value.trim()) return;
-      dispatchPointerSequence(composer.sendButton);
-
-      window.setTimeout(() => {
-        if (!composer.editor.value.trim()) return;
-        dispatchEnter(composer.editor);
-      }, 800);
-    }, 800);
+      if (!composer.editor.isConnected || !composer.editor.value.trim()) return;
+      invokeReactSubmit(composer);
+    }, 250);
   });
 })();

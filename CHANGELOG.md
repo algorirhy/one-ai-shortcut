@@ -1,6 +1,13 @@
 # Changelog
 
-Notable changes to One Shortcut for AI Chat are documented here. Versions follow the Chrome extension version in `manifest.json`.
+Notable changes to One AI Shortcut are documented here. Versions follow the Chrome extension version in `manifest.json`.
+
+## Unreleased
+
+### Changed
+
+- Shorten the product name to **One AI Shortcut** and introduce the broader slogan **“Make every AI chat work your way.”**
+- Reframe the English and Chinese documentation around an extensible personal AI chat workflow while keeping broadcasting, attachments, and unified shortcuts equally visible.
 
 ## 1.4.1 — 2026-08-10
 
@@ -32,7 +39,7 @@ Notable changes to One Shortcut for AI Chat are documented here. Versions follow
 ## Earlier releases
 
 - **1.3.1** — Restored the circular three-dot logo.
-- **1.3.0** — Added the current branding and reorganized project documentation.
+- **1.3.0** — Added the circular three-dot branding and reorganized project documentation.
 - **1.2.1** — Improved Doubao's framework-level submission path.
 - **1.2.0** — Added failure notifications and the first Doubao main-world integration.
 - **1.1.1** — Fixed Doubao prompt submission.

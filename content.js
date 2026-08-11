@@ -4,7 +4,7 @@
 (() => {
   'use strict';
 
-  const LOG_PREFIX = '[One Shortcut for AI Chat]';
+  const LOG_PREFIX = '[One AI Shortcut]';
   const IS_MAC = navigator.platform.toUpperCase().includes('MAC');
   const USER_MESSAGE_SELECTORS = [
     '[data-message-author-role="user"]',

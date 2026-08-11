@@ -2,7 +2,7 @@
 
 ## English
 
-One Shortcut for AI Chat does not collect, sell, or retain personal information, messages, attachments, browsing history, or usage analytics. It has no developer-operated backend.
+One AI Shortcut does not collect, sell, or retain personal information, messages, attachments, browsing history, or usage analytics. It has no developer-operated backend.
 
 When you send a message, the extension processes its text and attachments in memory and sends them only to the AI chatbots selected in the popup. Attachment bytes are encoded locally for transfer between extension components and remain in memory only while the background delivery job is running; the extension does not write them to persistent storage. Selected services receive and process the content according to their own terms and privacy policies. The extension does not intercept or store chatbot responses.
 
@@ -17,7 +17,7 @@ Questions or reports can be submitted through [GitHub Issues](https://github.com
 
 ## 简体中文
 
-One Shortcut for AI Chat 不会收集、出售或保留个人信息、消息、附件、浏览记录或使用分析数据，也没有由开发者运营的后端服务。
+One AI Shortcut 不会收集、出售或保留个人信息、消息、附件、浏览记录或使用分析数据，也没有由开发者运营的后端服务。
 
 发送消息时，扩展只在内存中处理文字和附件，并仅发送给弹窗中选中的 AI 聊天服务。附件数据会在本地编码，用于扩展组件之间的传输，并且只在后台发送任务运行期间保留在内存中；扩展不会把附件写入持久化存储。被选中的服务会按照各自的条款和隐私政策处理收到的内容。扩展不会截取或保存这些服务生成的回复。
 

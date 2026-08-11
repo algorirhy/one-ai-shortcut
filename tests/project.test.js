@@ -64,6 +64,7 @@ test('Gemini new-chat URL preserves the existing Google account path', () => {
 
 test('manifest loads shared config before the content script', () => {
   const manifest = JSON.parse(read('manifest.json'));
+  assert.equal(manifest.name, 'One AI Shortcut');
   assert.equal(manifest.version, '1.4.1');
   assert.deepEqual(manifest.permissions, ['tabs', 'notifications']);
   assert.deepEqual(manifest.icons, {
@@ -98,6 +99,8 @@ test('popup uses external scripts compatible with Manifest V3 CSP', () => {
   const contentScript = read('content.js');
   const pageMainScript = read('page-main.js');
   assert.match(popup, /<input id="attachment-input" type="file" multiple hidden \/>/);
+  assert.match(popup, /<h1>One AI Shortcut<\/h1>/);
+  assert.match(popup, /Make every AI chat work your way\./);
   assert.match(popup, /<kbd>⌘↵<\/kbd> send/);
   assert.match(popup, /<span class="version-label" id="version-label"><\/span>/);
   assert.match(popup, /https:\/\/github\.com\/algorirhy\/one-ai-shortcut/);
@@ -135,4 +138,18 @@ test('customer-facing English copy uses AI chatbot terminology', () => {
 test('release documentation matches the manifest version', () => {
   const manifest = JSON.parse(read('manifest.json'));
   assert.match(read('CHANGELOG.md'), new RegExp(`^## ${manifest.version} —`, 'm'));
+});
+
+test('product branding stays consistent across customer-facing surfaces', () => {
+  const customerCopy = [
+    read('README.md'),
+    read('README.zh-CN.md'),
+    read('PRIVACY.md'),
+    read('popup.html'),
+    read('icons/icon.svg'),
+  ].join('\n');
+
+  assert.doesNotMatch(customerCopy, /One Shortcut for AI Chat/);
+  assert.match(read('README.md'), /Make every AI chat work your way\./);
+  assert.match(read('README.zh-CN.md'), /让每个 AI 对话都按你的方式工作。/);
 });

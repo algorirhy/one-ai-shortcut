@@ -3,7 +3,7 @@
 
 importScripts('sites.js');
 
-const LOG_PREFIX = '[One Shortcut for AI Chat]';
+const LOG_PREFIX = '[One AI Shortcut]';
 const siteLocks = new Map();
 const broadcastJobs = new Map();
 let nextBroadcastJobId = 1;

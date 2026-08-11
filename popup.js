@@ -16,11 +16,16 @@
   const status = document.getElementById('status');
   const shortcutLink = document.getElementById('shortcut-link');
   const githubLink = document.getElementById('github-link');
+  const versionLabel = document.getElementById('version-label');
   const limits = OneAIShortcut.attachmentLimits;
 
   let busy = false;
   let nextAttachmentId = 1;
   const attachments = [];
+
+  const version = chrome.runtime.getManifest().version;
+  versionLabel.textContent = `v${version}`;
+  versionLabel.title = `Version ${version}`;
 
   function siteCheckboxes() {
     return [...siteList.querySelectorAll('input[type="checkbox"]')];

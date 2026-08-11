@@ -99,6 +99,7 @@ test('popup uses external scripts compatible with Manifest V3 CSP', () => {
   const pageMainScript = read('page-main.js');
   assert.match(popup, /<input id="attachment-input" type="file" multiple hidden \/>/);
   assert.match(popup, /<kbd>⌘↵<\/kbd> send/);
+  assert.match(popup, /<span class="version-label" id="version-label"><\/span>/);
   assert.match(popup, /https:\/\/github\.com\/algorirhy\/one-ai-shortcut/);
   assert.match(popup, /<script src="sites\.js"><\/script>/);
   assert.match(popup, /<script src="popup\.js"><\/script>/);
@@ -107,6 +108,7 @@ test('popup uses external scripts compatible with Manifest V3 CSP', () => {
   assert.match(popupScript, /if \(!acknowledgement\?\.accepted\)/);
   assert.match(popupScript, /dataUrl: await fileToDataUrl\(file\)/);
   assert.doesNotMatch(popupScript, /dataUrlPromise/);
+  assert.match(popupScript, /chrome\.runtime\.getManifest\(\)\.version/);
   assert.match(contentScript, /waitForSubmissionEvidence/);
   assert.match(contentScript, /for \(let attempt = 0; attempt < 2; attempt \+= 1\)/);
   assert.match(contentScript, /'page-submit', \[\], 70000, prompt/);
